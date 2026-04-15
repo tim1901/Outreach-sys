@@ -106,36 +106,74 @@ function ApiKeyGate({ onKey }) {
   );
 }
 
-// ── Claude API call ───────────────────────────────────────────────────────────
+// ── Claude API call (FIXED) ───────────────────────────────────────────────────
 async function callClaude(apiKey, system, userMsg, useSearch = false) {
   const body = {
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 1000,
+    max_tokens: 2000,
     system,
     messages: [{ role: "user", content: userMsg }],
   };
   if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { 
+      "Content-Type": "application/json", 
+      "x-api-key": apiKey, 
+      "anthropic-version": "2023-06-01", 
+      "anthropic-dangerous-direct-browser-access": "true" 
+    },
     body: JSON.stringify(body),
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message || `API error ${res.status}`);
   }
+
   const data = await res.json();
-  const text = data.content.filter(b => b.type === "text").map(b => b.text).join("");
   
-  // Extract JSON more reliably
+  // Collect ALL text from response (handles web search tool results)
+  let fullText = "";
+  if (data.content && Array.isArray(data.content)) {
+    for (const block of data.content) {
+      if (block.type === "text") {
+        fullText += block.text + "\n";
+      } else if (block.type === "tool_result" && block.content) {
+        // Web search results are in tool_result blocks
+        if (Array.isArray(block.content)) {
+          for (const item of block.content) {
+            if (item.type === "text") {
+              fullText += item.text + "\n";
+            }
+          }
+        } else if (typeof block.content === "string") {
+          fullText += block.content + "\n";
+        }
+      }
+    }
+  }
+
+  console.log("DEBUG: Full text from API:", fullText);
+
+  // Extract and parse JSON
   try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("No JSON found in response");
+    // Look for JSON object in the response
+    const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON object found in response");
+    }
+    
     const jsonStr = jsonMatch[0];
-    return JSON.parse(jsonStr);
+    console.log("DEBUG: Extracted JSON string:", jsonStr);
+    
+    const parsed = JSON.parse(jsonStr);
+    console.log("DEBUG: Successfully parsed JSON:", parsed);
+    return parsed;
   } catch (e) {
-    console.error("JSON parse failed. Raw response:", text);
-    throw new Error(`JSON Parse error: ${e.message}. Claude may not have returned valid JSON.`);
+    console.error("ERROR: Failed to parse JSON. Full response was:", fullText);
+    throw new Error(`Failed to parse JSON response: ${e.message}`);
   }
 }
 
@@ -776,7 +814,7 @@ export default function App() {
       <div style={{ maxWidth: 900, margin: "0 auto", position: "relative", zIndex: 1 }}>
         <div style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <div style={{ fontSize: 9, letterSpacing: 6, color: "#00FFB2", marginBottom: 6 }}>AI OUTREACH OS // v5.0</div>
+            <div style={{ fontSize: 9, letterSpacing: 6, color: "#00FFB2", marginBottom: 6 }}>AI OUTREACH OS // v5.1 FIXED</div>
             <h1 style={{ fontSize: "clamp(18px, 3vw, 28px)", fontWeight: 900, margin: 0, fontFamily: "'Georgia', serif" }}>
               The Complete <span style={{ color: "#00FFB2" }}>Outreach OS</span>
             </h1>
