@@ -126,7 +126,17 @@ async function callClaude(apiKey, system, userMsg, useSearch = false) {
   }
   const data = await res.json();
   const text = data.content.filter(b => b.type === "text").map(b => b.text).join("");
-  return JSON.parse(text.match(/\{[\s\S]*\}/)[0]);
+  
+  // Extract JSON more reliably
+  try {
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON found in response");
+    const jsonStr = jsonMatch[0];
+    return JSON.parse(jsonStr);
+  } catch (e) {
+    console.error("JSON parse failed. Raw response:", text);
+    throw new Error(`JSON Parse error: ${e.message}. Claude may not have returned valid JSON.`);
+  }
 }
 
 // ── Gmail send ────────────────────────────────────────────────────────────────
