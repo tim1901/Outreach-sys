@@ -109,7 +109,7 @@ function ApiKeyGate({ onKey }) {
 // ── Claude API call ───────────────────────────────────────────────────────────
 async function callClaude(apiKey, system, userMsg, useSearch = false) {
   const body = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 1000,
     system,
     messages: [{ role: "user", content: userMsg }],
