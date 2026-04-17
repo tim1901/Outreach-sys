@@ -630,7 +630,7 @@ function AgentPanel({ apiKey, profile, onSent, templates }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
               <div className="section-title" style={{ marginBottom: 0 }}>Outreach Email</div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button className="btn btn-secondary" onClick={() => setEditing(!e => !editing)} style={{ fontSize: 12, padding: "6px 14px" }}>{editing ? "Preview" : "Edit"}</button>
+                <button className="btn btn-secondary" onClick={() => setEditing(v => !v)} style={{ fontSize: 12, padding: "6px 14px" }}>{editing ? "Preview" : "Edit"}</button>
                 <button className="btn btn-secondary" onClick={() => { navigator.clipboard.writeText(`Subject: ${editSubject}\n\n${editBody}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }} style={{ fontSize: 12, padding: "6px 14px", borderColor: copied ? "var(--green)" : "var(--border)", color: copied ? "var(--green)" : "var(--text2)" }}>
                   {copied ? "✓ Copied" : "Copy"}
                 </button>
