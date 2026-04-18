@@ -310,12 +310,13 @@ Return ONLY valid JSON, no backticks:
 /* ── API Layer ──────────────────────────────────────────────────────────── */
 async function callClaude(apiKey, system, userMsg, useSearch = false) {
   const body = {
-    model: "claude-sonnet-4-20250514",
+    model: "claude-3-5-sonnet-20241022",
     max_tokens: 1024,
     system,
     messages: [{ role: "user", content: userMsg }],
   };
-  if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+  // Web search requires special beta access — disabled for broad compatibility
+  // if (useSearch) body.tools = [{ type: "web_search_20250305", name: "web_search" }];
 
   const res = await fetch(ANTHROPIC_API, {
     method: "POST",
@@ -329,8 +330,16 @@ async function callClaude(apiKey, system, userMsg, useSearch = false) {
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `API error ${res.status}`);
+    let errMsg = "API error " + res.status;
+    try {
+      const errData = await res.json();
+      if (errData && errData.error && errData.error.message) {
+        errMsg = errData.error.message;
+      } else if (errData && typeof errData.error === "string") {
+        errMsg = errData.error;
+      }
+    } catch (_) {}
+    throw new Error(errMsg);
   }
 
   const data = await res.json();
