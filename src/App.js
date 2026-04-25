@@ -310,7 +310,7 @@ Return ONLY valid JSON, no backticks:
 /* ── API Layer ──────────────────────────────────────────────────────────── */
 async function callClaude(apiKey, system, userMsg, useSearch = false) {
   const body = {
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-haiku-4-5",
     max_tokens: 1024,
     system,
     messages: [{ role: "user", content: userMsg }],
@@ -333,11 +333,11 @@ async function callClaude(apiKey, system, userMsg, useSearch = false) {
     let errMsg = "API error " + res.status;
     try {
       const errData = await res.json();
-      if (errData && errData.error && errData.error.message) {
-        errMsg = errData.error.message;
-      } else if (errData && typeof errData.error === "string") {
-        errMsg = errData.error;
-      }
+      // Show the full raw error so we can debug exactly what Anthropic returns
+      const raw = JSON.stringify(errData);
+      if (errData?.error?.message) errMsg = errData.error.message;
+      else if (typeof errData?.error === "string") errMsg = errData.error;
+      else errMsg = raw;
     } catch (_) {}
     throw new Error(errMsg);
   }
